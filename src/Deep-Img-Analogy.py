@@ -28,6 +28,7 @@ from src.models import VGG19
 from src import Utils
 from src.PatchMatch import PatchMatchOrig
 import matplotlib.pyplot as plt
+import datetime
 
 
 import scipy
@@ -83,6 +84,9 @@ def main(imga_path,imgbb_path,out):
     featbb = model.get_features(img_tensor=imgbb)
 
     ###### Process L 5 ######
+    print('======layer5- NNF Start:=================')
+    t1=datetime.datetime.now()
+    
     feat5a = feata[c_feat_ids[0]]
     feat5bb = featbb[c_feat_ids[0]]
 
@@ -91,7 +95,8 @@ def main(imga_path,imgbb_path,out):
 
     pm5ab = PatchMatchOrig(feat5a_norm,feat5a_norm,feat5bb_norm,feat5bb_norm, c_patch_sizes[0])
     pm5ab.propagate(iters=5,rand_search_radius=c_patch_radii[0])
-
+    
+    
     imga_raw = Utils.load_image(img_path=imga_path,to_array=False,to_variable=False).numpy().transpose(1,2,0)
     imgbb_raw = Utils.load_image(img_path=imgbb_path,to_array=False,to_variable=False).numpy().transpose(1,2,0)
     imga_raw.shape
@@ -104,12 +109,27 @@ def main(imga_path,imgbb_path,out):
 
     warped_feat5bb = pm5ab.reconstruct_image(feat5bb)
     warped_feat5a = pm5ba.reconstruct_image(feat5a)
+    
+    t2=datetime.datetime.now()
+    print('======layer5- NNF END===='+str(t2-t1)+'=============')
+    
     ###### Block L 5 Done ######
 
 
     ###### Process Block 4 ######
+    
+    print('======layer5- Deconv Start:=================')
+    t1=datetime.datetime.now()
+    
     r4_bb = model.get_deconvoluted_feat(warped_feat5bb,5,iters=c_iters[0])
     r4_a = model.get_deconvoluted_feat(warped_feat5a,5,iters=c_iters[0])
+
+    t2=datetime.datetime.now()
+    print('======layer5- Deconv END===='+str(t2-t1)+'=============')
+
+
+    print('======layer4- NNF Start:=================')
+    t1=datetime.datetime.now()
 
     feat4a = feata[c_feat_ids[1]]
     feat4bb = featbb[c_feat_ids[1]]
@@ -137,15 +157,28 @@ def main(imga_path,imgbb_path,out):
 
     warped_feat4bb = pm4ab.reconstruct_image(feat4bb)
     warped_feat4a = pm4ba.reconstruct_image(feat4a)
+    
+    
+    t2=datetime.datetime.now()
+    print('======layer4- NNF END===='+str(t2-t1)+'=============')
+    
     ###### Block 4 done ######
 
 
     ###### Process Block 3 ######
-
+    print('======layer4- Deconv Start:=================')
+    t1=datetime.datetime.now()
 
     r3_bb = model.get_deconvoluted_feat(warped_feat4bb,4,iters=c_iters[1])
     r3_a = model.get_deconvoluted_feat(warped_feat4a,4,iters=c_iters[1])
 
+    t2=datetime.datetime.now()
+    print('======layer4- Deconv END===='+str(t2-t1)+'=============')
+
+    print('======layer3- NNF Start:=================')
+    t1=datetime.datetime.now()
+    
+    
     feat3a = feata[c_feat_ids[2]]
     feat3bb = featbb[c_feat_ids[2]]
 
@@ -170,13 +203,27 @@ def main(imga_path,imgbb_path,out):
 
     warped_feat3bb = pm3ab.reconstruct_image(feat3bb)
     warped_feat3a = pm3ba.reconstruct_image(feat3a)
-
+    
+    
+    t2=datetime.datetime.now()
+    print('======layer3- NNF END===='+str(t2-t1)+'=============')
+    
     ###### Block 3 done ######
 
     ###### Process Block 2 ######
-
+    
+    print('======layer3- Deconv Start:=================')
+    t1=datetime.datetime.now()
+    
     r2_bb = model.get_deconvoluted_feat(warped_feat3bb,3,iters=c_iters[2])
     r2_a = model.get_deconvoluted_feat(warped_feat3a,3,iters=c_iters[2])
+
+    t2=datetime.datetime.now()
+    print('======layer3- Deconv END===='+str(t2-t1)+'=============')
+
+    print('======layer2- NNF Start:=================')
+    t1=datetime.datetime.now()
+
 
     feat2a = feata[c_feat_ids[3]]
     feat2bb = featbb[c_feat_ids[3]]
@@ -205,12 +252,25 @@ def main(imga_path,imgbb_path,out):
     warped_feat2bb = pm2ab.reconstruct_image(feat2bb)
     warped_feat2a = pm2ba.reconstruct_image(feat2a)
 
+    t2=datetime.datetime.now()
+    print('======layer2- NNF END===='+str(t2-t1)+'=============')
+
+
     ###### Block 2 done ######
 
     ###### Process Block 1 ######
 
+    print('======layer2- Deconv Start:=================')
+    t1=datetime.datetime.now()
+
     r1_bb = model.get_deconvoluted_feat(warped_feat2bb,2,iters=c_iters[3])
     r1_a = model.get_deconvoluted_feat(warped_feat2a,2,iters=c_iters[3])
+
+    t2=datetime.datetime.now()
+    print('======layer2- Deconv END===='+str(t2-t1)+'=============')
+
+    print('======layer1- NNF Start:=================')
+    t1=datetime.datetime.now()
 
     feat1a = feata[c_feat_ids[4]]
     feat1bb = featbb[c_feat_ids[4]]
@@ -228,6 +288,10 @@ def main(imga_path,imgbb_path,out):
     pm1ab.nnf = pm2ab.upsample_nnf(size=224)
 
     pm1ab.propagate(iters=5,rand_search_radius=c_patch_radii[4])
+
+    t2=datetime.datetime.now()
+    print('======layer1- NNF END===='+str(t2-t1)+'=============')
+
 
     plt.axis('off')
     # plt.imshow(Utils.deprocess_image(Utils.reconstruct_image(img_a=imgbb_raw,pm=pm1ab)))
